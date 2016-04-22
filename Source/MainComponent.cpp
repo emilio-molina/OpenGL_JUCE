@@ -32,6 +32,22 @@ public:
 
     void initialise() override
     {
+        GLfloat verts[]
+        {
+            +0.0f, +1.0f,
+            -1.0f, -1.0f,
+            +1.0f, -1.0f,
+        };
+
+        // Now we have to copy these vertices to my graphic card
+        GLuint myBufferID;
+        openGLContext.extensions.glGenBuffers(1, &myBufferID);
+        openGLContext.extensions.glBindBuffer(GL_ARRAY_BUFFER, myBufferID);
+        openGLContext.extensions.glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+        // Vertex attributes (needed to draw the triangle)
+        openGLContext.extensions.glEnableVertexAttribArray(0);
+        openGLContext.extensions.glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     }
 
     void shutdown() override
@@ -41,7 +57,8 @@ public:
     void render() override
     {
         OpenGLHelpers::clear (Colours::black);
-
+        glViewport(0, 0, getWidth(), getHeight());
+        glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
     void paint (Graphics& g) override
