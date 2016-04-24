@@ -146,6 +146,8 @@ public:
             openGLContext.extensions.glEnableVertexAttribArray (textureCoordIn->attributeID);
         }
         
+        //glPointSize(20.0);
+        //glDrawElements (GL_POINTS, numIndices, GL_UNSIGNED_INT, 0);  // Draw triangles!
         glDrawElements (GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);  // Draw triangles!
         
         if (position != nullptr)       openGLContext.extensions.glDisableVertexAttribArray (position->attributeID);
