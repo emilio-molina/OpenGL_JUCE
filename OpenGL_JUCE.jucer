@@ -2,11 +2,11 @@
 
 <JUCERPROJECT id="v8MxM5" name="OpenGL_JUCE" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.yourcompany.OpenGL_JUCE" includeBinaryInAppConfig="1"
-              jucerVersion="4.2.1">
+              jucerVersion="5.2.0" headerPath="/usr/local/Cellar/glm/0.9.8.5/include">
   <MAINGROUP id="edyWSh" name="OpenGL_JUCE">
     <GROUP id="{FCD36461-A39A-F62B-EA0E-C978BAD1A266}" name="Source">
-      <FILE id="mjpkSE" name="MainComponent.cpp" compile="1" resource="0"
-            file="Source/MainComponent.cpp"/>
+      <FILE id="eYXZsC" name="ScatterPlot.cpp" compile="1" resource="0" file="Source/ScatterPlot.cpp"/>
+      <FILE id="NexENO" name="ScatterPlot.h" compile="0" resource="0" file="Source/ScatterPlot.h"/>
       <FILE id="ROZ82U" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>

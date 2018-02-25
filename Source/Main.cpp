@@ -9,8 +9,7 @@
 */
 
 #include "../JuceLibraryCode/JuceHeader.h"
-
-Component* createMainContentComponent();
+#include "ScatterPlot.h"
 
 //==============================================================================
 class OpenGL_JUCEApplication  : public JUCEApplication
@@ -65,11 +64,13 @@ public:
                                                     Colours::lightgrey,
                                                     DocumentWindow::allButtons)
         {
+            //ScopedPointer<ScatterPlot> scatterPlot();
             setUsingNativeTitleBar (true);
-            setContentOwned (createMainContentComponent(), true);
+            setContentOwned (new ScatterPlot(), true);
             setResizable (true, true);
-
+            
             centreWithSize (getWidth(), getHeight());
+
             setVisible (true);
         }
 
