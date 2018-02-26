@@ -44,9 +44,14 @@ ScatterPlot::ScatterPlot()
      indices);
      }*/
     int sphere_id = 0;
-    for (int ix=-10; ix<11; ix=ix+5) {
-        for (int iy=-10; iy<11; iy=iy+5) {
-            for (int iz=-10; iz<11; iz=iz+2) {
+    //for (int ix=-10; ix<11; ix=ix+5) {
+    //    for (int iy=-10; iy<11; iy=iy+5) {
+    //        for (int iz=-10; iz<11; iz=iz+2) {
+    Random r;
+    for (int j=0; j<5000; j++) {
+                float ix = (r.nextFloat() - 0.5f) * 20;
+                float iy = (r.nextFloat() - 0.5f) * 20;
+                float iz = (r.nextFloat() - 0.5f) * 20;
                 float x = ix * 0.1f;
                 float y = iy * 0.1f;
                 float z = iz * 0.1f;
@@ -65,8 +70,9 @@ ScatterPlot::ScatterPlot()
                                                sphereId,
                                                indices);
                 sphere_id++;
-            }
-        }
+    //        }
+    //    }
+    //}
     }
     initialized = true;
 }
@@ -280,11 +286,11 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
     glm::vec3 out_origin, out_direction;
     ScreenPosToWorldRay(x, y, make_mat4(getViewMatrix().mat), make_mat4(getProjectionMatrix().mat),
                         out_origin, out_direction);
-    for(int i=0; i<100; i++){
+    for(int i=0; i<spherePositions.size(); i++){
         
         float intersection_distance; // Output of TestRayOBBIntersection()
-        glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
-        glm::vec3 aabb_max( 1.0f,  1.0f,  1.0f);
+        glm::vec3 aabb_min(-0.01f, -0.01f, -0.01f);
+        glm::vec3 aabb_max( 0.01f,  0.01f,  0.01f);
         
         // The ModelMatrix transforms :
         // - the mesh to its desired position and orientation
