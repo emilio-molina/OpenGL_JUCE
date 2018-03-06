@@ -18,6 +18,7 @@ using namespace glm;
 //==============================================================================
 ScatterPlot::ScatterPlot()
 {
+    _camera = new Camera();
     setSize (800, 600);
     zoomValue = 5.0f;
     draggingX = 0.0f;
@@ -97,11 +98,24 @@ Matrix3D<float> ScatterPlot::getViewMatrix() const
 
 void ScatterPlot::mouseDown (const MouseEvent& e)
 {
+    _camera->setMousePressPos(glm::vec2(e.getPosition().x, e.getPosition().y));
+
     draggableOrientation.mouseDown (e.getPosition());
+
 }
 
 void ScatterPlot::mouseDrag (const MouseEvent& e)
 {
+    if (e.mods.isLeftButtonDown()){
+        _camera->rotate(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+    }
+    if (e.mods.isMiddleButtonDown()){
+        _camera->pan(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+    }
+    
+    if (e.mods.isRightButtonDown()){
+        _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+    }
     draggableOrientation.mouseDrag (e.getPosition());
 }
 
@@ -278,9 +292,10 @@ bool TestRayOBBIntersection(
 
 void ScatterPlot::mouseMove (const MouseEvent& e)
 {
+    
     float x = ((float)e.getPosition().getX() / getWidth() - 0.5f) * 2;
     float y = ((float)e.getPosition().getY() / getHeight() - 0.5f) * -2;
-    Logger::writeToLog(String(x) + ", " + String(y));
+    //Logger::writeToLog(String(x) + ", " + String(y));
     vec4 screenCoords(x, y, 0.0f, 1.0f);
     //Logger::writeToLog(String(worldCoords.x) + ", " + String(worldCoords.y) + ", " + String(worldCoords.z));
     glm::vec3 out_origin, out_direction;
@@ -307,7 +322,7 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
                                     ModelMatrix,
                                     intersection_distance)
             ){
-            Logger::writeToLog("intersect: " + String(i));
+            //Logger::writeToLog("intersect: " + String(i));
             break;
         }
     }
@@ -324,7 +339,7 @@ void ScatterPlot::render()
     auxRender1();
     auxRender2();
     glDrawElements (GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
-    auxRender3();
+    //auxRender3();
 }
 
 ScatterPlot::~ScatterPlot()
@@ -509,7 +524,7 @@ void ScatterPlot::auxRender1() {
         uniforms->projectionMatrix->setMatrix4 (getProjectionMatrix().mat, 1, false);
     
     if (uniforms->viewMatrix != nullptr)
-        uniforms->viewMatrix->setMatrix4 (getViewMatrix().mat, 1, false);
+        uniforms->viewMatrix->setMatrix4(glm::value_ptr(_camera->getWorldToViewMatrix()), 1, false);
     
     if (uniforms->lightPosition != nullptr)
         uniforms->lightPosition->set (-15.0f, 10.0f, 15.0f, 0.0f);

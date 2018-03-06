@@ -17,6 +17,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include "Camera.hpp"
 
 struct Vertex
 {
@@ -114,6 +115,7 @@ private:
 class ScatterPlot    : public OpenGLAppComponent
 {
 public:
+    Camera* _camera;
     std::vector<glm::vec3> spherePositions;
     ScatterPlot();
     ~ScatterPlot();
