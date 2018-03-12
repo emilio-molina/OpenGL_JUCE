@@ -18,6 +18,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include "Camera.hpp"
+#include "Bloom.hpp"
 
 struct Vertex
 {
@@ -36,6 +37,7 @@ public:
     SolidSphereGenerator(unsigned int rings,
                          unsigned int sectors)
     {
+        printf("%f %f/n", M_PI, M_PI_2);
         float const R = 1./(float)(rings-1);
         float const S = 1./(float)(sectors-1);
         for(int r = 0; r < rings; r++) {
@@ -63,7 +65,7 @@ public:
         }
     }
     
-    void generateSphere(int sphereId, float offsetX, float offsetY, float offsetZ,
+        void generateSphere(int sphereId, float offsetX, float offsetY, float offsetZ,
                         float colourR, float colourG, float colourB, float alpha,
                         float radius, Array<Vertex> &vertices, Array<int> &sphereIds,
                         Array<int> &indices) {
@@ -94,9 +96,11 @@ struct Uniforms
         projectionMatrix = createUniform (openGLContext, shaderProgram, "projectionMatrix");
         viewMatrix       = createUniform (openGLContext, shaderProgram, "viewMatrix");
         lightPosition    = createUniform (openGLContext, shaderProgram, "lightPosition");
+        position         = createUniform (openGLContext, shaderProgram, "position");
+        scale            = createUniform (openGLContext, shaderProgram, "scale");
     }
     
-    ScopedPointer<OpenGLShaderProgram::Uniform> projectionMatrix, viewMatrix, lightPosition;
+    ScopedPointer<OpenGLShaderProgram::Uniform> projectionMatrix, viewMatrix, lightPosition, position, scale;
     
 private:
     static OpenGLShaderProgram::Uniform* createUniform (OpenGLContext& openGLContext,
@@ -115,8 +119,12 @@ private:
 class ScatterPlot    : public OpenGLAppComponent
 {
 public:
+    
+    Bloom* _bloomEffect;
+    OpenGLFrameBuffer fb;
     Camera* _camera;
     std::vector<glm::vec3> spherePositions;
+    std::vector<glm::vec3> hoveredSpherePositions;
     ScatterPlot();
     ~ScatterPlot();
     void initialise() override;
@@ -130,12 +138,17 @@ public:
     void mouseMove (const MouseEvent& e) override;
     void mouseDrag (const MouseEvent& e) override;
     void mouseWheelMove (const MouseEvent&, const MouseWheelDetails& d) override;
-    void createShaders();
+    void createLambertShader();
+    void createHoverShader();
     void auxRender1();
     void auxRender2();
     void auxRender3();
     
 private:
+
+    ScopedPointer<OpenGLShaderProgram> lambertShader;
+    ScopedPointer<OpenGLShaderProgram> hoverShader;
+    
     Random r;
     Draggable3DOrientation draggableOrientation;
     float draggingX;
@@ -145,13 +158,14 @@ private:
     Array<Vertex> vertices;
     Array<int> indices;
     Array<int> sphereId;
-    GLuint vertexBuffer, indexBuffer;
+    GLuint vertexBuffer, indexBuffer, positionBuffer;
     const char* vertexShader;
     const char* fragmentShader;
     float zoomValue;
-    ScopedPointer<OpenGLShaderProgram> shader;
-    ScopedPointer<OpenGLShaderProgram::Attribute> position, normal, sourceColour, textureCoordIn;
-    ScopedPointer<Uniforms> uniforms;
+    //ScopedPointer<OpenGLShaderProgram> shader;
+    ScopedPointer<OpenGLShaderProgram::Attribute> position, normal, sourceColour, textureCoordIn, vertex;
+    ScopedPointer<Uniforms> lambertUniforms;
+    ScopedPointer<Uniforms> hoverUniforms;
     String newVertexShader, newFragmentShader;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ScatterPlot)
 };

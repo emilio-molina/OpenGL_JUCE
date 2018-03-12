@@ -19,7 +19,7 @@ void Camera::setMousePressPos(const glm::vec2& input)
 
 Camera::Camera() :
 _viewDirection(0.0f, 0.0f, -1.0f),
-position(0.0f, 0.0f, 10.0f),
+position(0.0f, 0.0f, 5.2f),
 _up(0.0f, 1.0f, 0.0f)
 {
 }
@@ -45,10 +45,8 @@ void Camera::rotate(const glm::vec2& pos, int width, int height)
     }
     
     _strafeDirection = glm::cross(_viewDirection, _up);
-    glm::mat4 rotator = glm::rotate(dx* 0.05f, _up) *
-    glm::rotate(-dy * 0.05f, _strafeDirection);
-    
-    glm::mat4 translate = glm::translate(glm::vec3(0.f, 0.f, 0.f));
+    glm::mat4 rotator = glm::rotate(dx* 0.05f, _up) * glm::rotate(-dy * 0.05f, _strafeDirection);
+    glm::vec3 cameraFocusVector = -position;
     _viewDirection = glm::mat3(rotator) * _viewDirectionPressPoss;
     
 }

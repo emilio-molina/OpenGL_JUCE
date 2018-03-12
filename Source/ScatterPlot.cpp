@@ -15,40 +15,49 @@
 #include <iostream>
 #include <fstream>
 using namespace glm;
+
+
+//TODO: Explain JUCE Opengl highest suported version is 3.2 : ( which is sad...
+
 //==============================================================================
 ScatterPlot::ScatterPlot()
 {
+    //openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
+    
+    
     _camera = new Camera();
     setSize (800, 600);
     zoomValue = 5.0f;
     draggingX = 0.0f;
     draggingY = 0.0f;
-    initialized = false;
     position = nullptr;
     normal = nullptr;
+    vertex = nullptr;
     textureCoordIn = nullptr;
     sourceColour = nullptr;
     SolidSphereGenerator sphereGenerator(10, 10);
-    /*for (int i=0; i<5000; i++) {
-     sphereGenerator.generateSphere(
-     i,
-     (r.nextFloat() - 0.5f) * 10,
-     (r.nextFloat() - 0.5f) * 10,
-     (r.nextFloat() - 0.5f) * 10,
-     r.nextFloat(),
-     r.nextFloat(),
-     r.nextFloat(),
-     1.0f,
-     0.075f,
-     vertices,
-     sphereId,
-     indices);
-     }*/
+    
     int sphere_id = 0;
-    //for (int ix=-10; ix<11; ix=ix+5) {
-    //    for (int iy=-10; iy<11; iy=iy+5) {
-    //        for (int iz=-10; iz<11; iz=iz+2) {
+
     Random r;
+    
+    // We dont need to generate a new sphere each time when
+    // we want to place it in new position. We can reuse
+    // already existing one simply multiply it matrix
+    // to desirable position
+    sphereGenerator.generateSphere(sphere_id,
+                                   0.f,
+                                   0.f,
+                                   0.f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   1.0f,
+                                   0.01f,
+                                   vertices,
+                                   sphereId,
+                                   indices);
+    
     for (int j=0; j<5000; j++) {
                 float ix = (r.nextFloat() - 0.5f) * 20;
                 float iy = (r.nextFloat() - 0.5f) * 20;
@@ -58,24 +67,12 @@ ScatterPlot::ScatterPlot()
                 float z = iz * 0.1f;
                 glm::vec3 v(x, y, z);
                 spherePositions.push_back(v);
-                sphereGenerator.generateSphere(sphere_id,
-                                               v.x,
-                                               v.y,
-                                               v.z,
-                                               1.0f,
-                                               1.0f,
-                                               1.0f,
-                                               1.0f,
-                                               0.01f,
-                                               vertices,
-                                               sphereId,
-                                               indices);
-                sphere_id++;
-    //        }
-    //    }
-    //}
     }
-    initialized = true;
+    
+
+
+    
+    
 }
 
 Matrix3D<float> ScatterPlot::getProjectionMatrix() const
@@ -96,12 +93,315 @@ Matrix3D<float> ScatterPlot::getViewMatrix() const
 
 
 
+
+void ScatterPlot::render()
+{
+    auxRender1();
+    auxRender2();
+    auxRender3();
+}
+
+ScatterPlot::~ScatterPlot()
+{
+    shutdownOpenGL();
+}
+
+void ScatterPlot::paint (Graphics& g)
+{
+}
+
+void ScatterPlot::resized()
+{
+    draggableOrientation.setViewport (getLocalBounds());
+    
+}
+
+
+//=== OpenGL auxiliar functions
+
+/** @brief Create OpenGL shaders
+ *
+ * Vertex shader: Graphic-card routine determining how vertices modify their
+ *                coordinates, as a function of camera position, etc.
+ *
+ * Fragment shader: Graphic-card routine determining how pixels are colored
+ *                  depending on their position, colors, texture, light, etc.
+ */
+
+
+std::string readShaderCode(const char* fileName)
+{
+    std::ifstream meInput(fileName);
+    if (!meInput.good())
+    {
+        std::cout << "File failed to read " << fileName << std::endl;
+        exit(1);
+    }
+    return std::string(
+                       std::istreambuf_iterator<char>(meInput),
+                       std::istreambuf_iterator<char>());
+}
+
+
+
+void ScatterPlot::createLambertShader()
+{
+    
+    //TODO: Why JUCE dosn't have separate shader creation. Vertex shader could be reused whe don't need it to create for each shader 
+    lambertShader =  new OpenGLShaderProgram (openGLContext);
+    
+    String statusText;
+    
+    lambertShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/fragmentShader.glsl") , GL_FRAGMENT_SHADER);
+    lambertShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/vertexShader.glsl") , GL_VERTEX_SHADER);
+    lambertShader->link();
+    
+    if (lambertShader->link())
+    {
+        lambertUniforms   = new Uniforms (openGLContext, *lambertShader);
+        
+        if (openGLContext.extensions.glGetAttribLocation (lambertShader->getProgramID(), "position") < 0)
+            position      = nullptr;
+        else
+            position      = new OpenGLShaderProgram::Attribute (*lambertShader,    "position");
+        
+        if (openGLContext.extensions.glGetAttribLocation (lambertShader->getProgramID(), "vertex") < 0)
+            vertex      = nullptr;
+        else
+            vertex  = new OpenGLShaderProgram::Attribute (*lambertShader,    "vertex");
+        
+        if (openGLContext.extensions.glGetAttribLocation (lambertShader->getProgramID(), "sourceColour") < 0)
+            sourceColour      = nullptr;
+        else
+            sourceColour  = new OpenGLShaderProgram::Attribute (*lambertShader,    "sourceColour");
+        
+        if (openGLContext.extensions.glGetAttribLocation (lambertShader->getProgramID(), "normal") < 0)
+            normal      = nullptr;
+        else
+            normal      = new OpenGLShaderProgram::Attribute (*lambertShader,    "normal");
+        if (openGLContext.extensions.glGetAttribLocation (lambertShader->getProgramID(), "textureCoordIn") < 0)
+            textureCoordIn      = nullptr;
+        else
+            textureCoordIn      = new OpenGLShaderProgram::Attribute (*lambertShader,    "textureCoordIn");
+        
+        statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
+    }
+    else
+    {
+        statusText = lambertShader->getLastError();
+    }
+}
+
+void ScatterPlot::createHoverShader()
+{
+    
+    //TODO: Why JUCE dosn't have separate shader creation. Vertex shader could be reused whe don't need it to create for each shader
+    hoverShader =  new OpenGLShaderProgram (openGLContext);
+    
+    String statusText;
+    
+    hoverShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/hoverShader.glsl") , GL_FRAGMENT_SHADER);
+    hoverShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/vertexShader.glsl") , GL_VERTEX_SHADER);
+    hoverShader->link();
+    
+    if (hoverShader->link())
+    {
+        hoverUniforms   = new Uniforms (openGLContext, *hoverShader);
+        
+        if (openGLContext.extensions.glGetAttribLocation (hoverShader->getProgramID(), "position") < 0)
+            position      = nullptr;
+        else
+            position      = new OpenGLShaderProgram::Attribute (*hoverShader,    "position");
+        
+        if (openGLContext.extensions.glGetAttribLocation (hoverShader->getProgramID(), "vertex") < 0)
+            vertex      = nullptr;
+        else
+            vertex  = new OpenGLShaderProgram::Attribute (*hoverShader,    "vertex");
+        
+        if (openGLContext.extensions.glGetAttribLocation (hoverShader->getProgramID(), "sourceColour") < 0)
+            sourceColour      = nullptr;
+        else
+            sourceColour  = new OpenGLShaderProgram::Attribute (*hoverShader,    "sourceColour");
+        
+        if (openGLContext.extensions.glGetAttribLocation (hoverShader->getProgramID(), "normal") < 0)
+            normal      = nullptr;
+        else
+            normal      = new OpenGLShaderProgram::Attribute (*hoverShader,    "normal");
+        if (openGLContext.extensions.glGetAttribLocation (hoverShader->getProgramID(), "textureCoordIn") < 0)
+            textureCoordIn      = nullptr;
+        else
+            textureCoordIn      = new OpenGLShaderProgram::Attribute (*hoverShader,    "textureCoordIn");
+        
+        statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
+    }
+    else
+    {
+        statusText = hoverShader->getLastError();
+    }
+}
+
+/** @brief OpenGL initialization function called only once
+ */
+void ScatterPlot::initialise()
+{
+    createLambertShader();
+    createHoverShader();
+    
+    // We only need to define this data once ----
+    // TODO: Explain
+    
+    openGLContext.extensions.glGenBuffers (1, &vertexBuffer);
+    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, vertexBuffer);
+    openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
+                                           vertices.size() * sizeof (Vertex),
+                                           vertices.getRawDataPointer(), GL_DYNAMIC_DRAW);
+    
+    
+    openGLContext.extensions.glGenBuffers (1, &indexBuffer);
+    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    openGLContext.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER,
+                                           indices.size() * sizeof (juce::uint32),
+                                           indices.getRawDataPointer(), GL_DYNAMIC_DRAW);
+}
+
+/** @brief Shutdown OpenGL
+ */
+void ScatterPlot::shutdown()
+{
+    lambertShader = nullptr;
+}
+
+
+/** @brief Needed code for render function
+ *
+ */
+void ScatterPlot::auxRender1() {
+    // Stuff to be done before defining your triangles
+    jassert (OpenGLHelpers::isContextActive());
+    const float desktopScale = (float) openGLContext.getRenderingScale();
+    OpenGLHelpers::clear (Colour::greyLevel (0.05f));
+    glEnable (GL_DEPTH_TEST);
+    glDepthFunc (GL_LESS);
+    // Cull triangles which normal is not towards the camera
+    //glEnable(GL_CULL_FACE);
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glViewport (0, 0, roundToInt (desktopScale * getWidth()), roundToInt (desktopScale * getHeight()));
+
+}
+
+
+/** @brief Needed code for render function
+ *
+ */
+void ScatterPlot::auxRender2() {
+    // ************************************************
+
+    // TODO: Explain
+    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, vertexBuffer);
+    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    openGLContext.extensions.glBindBuffer (GL_UNIFORM_BUFFER, positionBuffer);
+    
+    lambertShader->use();
+    
+    if (lambertUniforms->projectionMatrix != nullptr)
+        lambertUniforms->projectionMatrix->setMatrix4 (getProjectionMatrix().mat, 1, false);
+    
+    if (lambertUniforms->viewMatrix != nullptr)
+        lambertUniforms->viewMatrix->setMatrix4(glm::value_ptr(_camera->getWorldToViewMatrix()), 1, false);
+    
+    if (lambertUniforms->lightPosition != nullptr)
+        lambertUniforms->lightPosition->set (-15.0f, 10.0f, 15.0f, 0.0f);
+    
+    if (lambertUniforms->scale != nullptr)
+        lambertUniforms->scale->set(2.f);
+    
+    // Now prepare this information to be drawn
+    if (vertex != nullptr)
+    {
+        openGLContext.extensions.glVertexAttribPointer (vertex->attributeID, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), 0);
+        openGLContext.extensions.glEnableVertexAttribArray (vertex->attributeID);
+    }
+    
+    if (normal != nullptr)
+    {
+        openGLContext.extensions.glVertexAttribPointer (normal->attributeID, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 3));
+        openGLContext.extensions.glEnableVertexAttribArray (normal->attributeID);
+    }
+    
+    if (sourceColour != nullptr)
+    {
+        openGLContext.extensions.glVertexAttribPointer (sourceColour->attributeID, 4, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 6));
+        openGLContext.extensions.glEnableVertexAttribArray (sourceColour->attributeID);
+    }
+    
+    if (textureCoordIn != nullptr)
+    {
+        openGLContext.extensions.glVertexAttribPointer (textureCoordIn->attributeID, 2, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 10));
+        openGLContext.extensions.glEnableVertexAttribArray (textureCoordIn->attributeID);
+    }
+    
+    
+    for (int n = 0; n < spherePositions.size(); n++)
+    {
+        if (lambertUniforms->position != nullptr)
+            lambertUniforms->position->set(spherePositions[n].x, spherePositions[n].y, spherePositions[n].z, 1.0);
+            glDrawElements (GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
+    }
+    
+    hoverShader->use();
+    
+    if (hoverUniforms->projectionMatrix != nullptr)
+        hoverUniforms->projectionMatrix->setMatrix4 (getProjectionMatrix().mat, 1, false);
+    
+    if (hoverUniforms->viewMatrix != nullptr)
+        hoverUniforms->viewMatrix->setMatrix4(glm::value_ptr(_camera->getWorldToViewMatrix()), 1, false);
+    
+    if (hoverUniforms->lightPosition != nullptr)
+        hoverUniforms->lightPosition->set (-15.0f, 10.0f, 15.0f, 0.0f);
+    
+    for (int n = 0; n < hoveredSpherePositions.size(); n++)
+    {
+        if (hoverUniforms->position != nullptr)
+            hoverUniforms->position->set(hoveredSpherePositions[n].x, hoveredSpherePositions[n].y, hoveredSpherePositions[n].z, 1.0);
+        
+        if (hoverUniforms->scale != nullptr)
+            hoverUniforms->scale->set(1.f);
+        
+        glDrawElements (GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
+    }
+    
+    
+}
+
+
+/** @brief Needed code for render function
+ *
+ */
+void ScatterPlot::auxRender3() {
+    if (position != nullptr)       openGLContext.extensions.glDisableVertexAttribArray (position->attributeID);
+    if (vertex != nullptr)       openGLContext.extensions.glDisableVertexAttribArray (vertex->attributeID);
+    if (normal != nullptr)         openGLContext.extensions.glDisableVertexAttribArray (normal->attributeID);
+    if (sourceColour != nullptr)   openGLContext.extensions.glDisableVertexAttribArray (sourceColour->attributeID);
+    if (textureCoordIn != nullptr)  openGLContext.extensions.glDisableVertexAttribArray (textureCoordIn->attributeID);
+    
+    // Reset the element buffers so child Components draw correctly
+    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, 0);
+    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+    openGLContext.extensions.glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    //openGLContext.extensions.glDeleteBuffers (1, &vertexBuffer);
+    //openGLContext.extensions.glDeleteBuffers (1, &indexBuffer);
+    repaint();
+}
+
+
 void ScatterPlot::mouseDown (const MouseEvent& e)
 {
     _camera->setMousePressPos(glm::vec2(e.getPosition().x, e.getPosition().y));
-
+    
     draggableOrientation.mouseDown (e.getPosition());
-
+    
 }
 
 void ScatterPlot::mouseDrag (const MouseEvent& e)
@@ -248,7 +548,6 @@ bool TestRayOBBIntersection(
                 tMin = t1;
             if (tMin > tMax)
                 return false;
-            
         }else{
             if(-e+aabb_min.y > 0.0f || -e+aabb_max.y < 0.0f)
                 return false;
@@ -285,14 +584,12 @@ bool TestRayOBBIntersection(
     
     intersection_distance = tMin;
     return true;
-    
 }
 
 
 
 void ScatterPlot::mouseMove (const MouseEvent& e)
 {
-    
     float x = ((float)e.getPosition().getX() / getWidth() - 0.5f) * 2;
     float y = ((float)e.getPosition().getY() / getHeight() - 0.5f) * -2;
     //Logger::writeToLog(String(x) + ", " + String(y));
@@ -301,6 +598,7 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
     glm::vec3 out_origin, out_direction;
     ScreenPosToWorldRay(x, y, make_mat4(getViewMatrix().mat), make_mat4(getProjectionMatrix().mat),
                         out_origin, out_direction);
+    
     for(int i=0; i<spherePositions.size(); i++){
         
         float intersection_distance; // Output of TestRayOBBIntersection()
@@ -321,7 +619,15 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
                                     aabb_max,
                                     ModelMatrix,
                                     intersection_distance)
-            ){
+            )
+        {
+            if( hoveredSpherePositions.size() > 0)
+            {
+                spherePositions.push_back(hoveredSpherePositions.front());
+                hoveredSpherePositions.erase(hoveredSpherePositions.begin());
+            }
+            hoveredSpherePositions.push_back(spherePositions[i]);
+            spherePositions.erase(spherePositions.begin() + i);
             //Logger::writeToLog("intersect: " + String(i));
             break;
         }
@@ -333,482 +639,3 @@ void ScatterPlot::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& 
     zoomValue += d.deltaY;
     zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
 }
-
-void ScatterPlot::render()
-{
-    auxRender1();
-    auxRender2();
-    glDrawElements (GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
-    //auxRender3();
-}
-
-ScatterPlot::~ScatterPlot()
-{
-    shutdownOpenGL();
-}
-
-void ScatterPlot::paint (Graphics& g)
-{
-}
-
-void ScatterPlot::resized()
-{
-    draggableOrientation.setViewport (getLocalBounds());
-    
-}
-
-
-//=== OpenGL auxiliar functions
-
-/** @brief Create OpenGL shaders
- *
- * Vertex shader: Graphic-card routine determining how vertices modify their
- *                coordinates, as a function of camera position, etc.
- *
- * Fragment shader: Graphic-card routine determining how pixels are colored
- *                  depending on their position, colors, texture, light, etc.
- */
-void ScatterPlot::createShaders()
-{
-    // Here we define the shaders use to draw our triangle. They are very simple.
-    
-    vertexShader =
-    "attribute vec4 position;\n"
-    "attribute vec4 normal;\n"
-    "attribute vec4 sourceColour;\n"
-    "attribute vec2 texureCoordIn;\n"
-    "\n"
-    "uniform mat4 projectionMatrix;\n"
-    "uniform mat4 viewMatrix;\n"
-    "uniform vec4 lightPosition;\n"
-    "\n"
-    "varying vec4 destinationColour;\n"
-    "varying vec2 textureCoordOut;\n"
-    "\n"
-    "varying float lightIntensity;\n"
-    "mat4 inverse(mat4 m) {\n"
-    "   float\n"
-    "   a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3],\n"
-    "   a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3],\n"
-    "   a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3],\n"
-    "   a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3],\n"
-    
-    "   b00 = a00 * a11 - a01 * a10,\n"
-    "   b01 = a00 * a12 - a02 * a10,\n"
-    "   b02 = a00 * a13 - a03 * a10,\n"
-    "   b03 = a01 * a12 - a02 * a11,\n"
-    "   b04 = a01 * a13 - a03 * a11,\n"
-    "   b05 = a02 * a13 - a03 * a12,\n"
-    "   b06 = a20 * a31 - a21 * a30,\n"
-    "   b07 = a20 * a32 - a22 * a30,\n"
-    "   b08 = a20 * a33 - a23 * a30,\n"
-    "   b09 = a21 * a32 - a22 * a31,\n"
-    "   b10 = a21 * a33 - a23 * a31,\n"
-    "   b11 = a22 * a33 - a23 * a32,\n"
-    
-    "   det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;\n"
-    
-    "   return mat4(\n"
-    "               a11 * b11 - a12 * b10 + a13 * b09,\n"
-    "               a02 * b10 - a01 * b11 - a03 * b09,\n"
-    "               a31 * b05 - a32 * b04 + a33 * b03,\n"
-    "               a22 * b04 - a21 * b05 - a23 * b03,\n"
-    "               a12 * b08 - a10 * b11 - a13 * b07,\n"
-    "               a00 * b11 - a02 * b08 + a03 * b07,\n"
-    "               a32 * b02 - a30 * b05 - a33 * b01,\n"
-    "               a20 * b05 - a22 * b02 + a23 * b01,\n"
-    "               a10 * b10 - a11 * b08 + a13 * b06,\n"
-    "               a01 * b08 - a00 * b10 - a03 * b06,\n"
-    "               a30 * b04 - a31 * b02 + a33 * b00,\n"
-    "               a21 * b02 - a20 * b04 - a23 * b00,\n"
-    "               a11 * b07 - a10 * b09 - a12 * b06,\n"
-    "               a00 * b09 - a01 * b07 + a02 * b06,\n"
-    "               a31 * b01 - a30 * b03 - a32 * b00,\n"
-    "               a20 * b03 - a21 * b01 + a22 * b00) / det;\n"
-    "}\n"
-    
-    "void main()\n"
-    "{\n"
-    "    vec4 light = inverse(viewMatrix) * lightPosition;\n"
-    "    lightIntensity = dot (light, normal);\n"
-    "    destinationColour = sourceColour;\n"
-    "    textureCoordOut = texureCoordIn;\n"
-    "    gl_Position = projectionMatrix * viewMatrix * position;\n"
-    //"    gl_Position = position;\n"
-    "}\n";
-    
-    fragmentShader =
-    "varying vec4 destinationColour;\n"
-    "varying float lightIntensity;\n"
-    "varying vec2 textureCoordOut;\n"
-    "\n"
-    "uniform sampler2D demoTexture;\n"
-    "void main()\n"
-    "{\n"
-    "    float l = max (0.2, lightIntensity * 0.04); \n"
-    "    vec4 c = destinationColour;\n"
-    "    vec4 colour = vec4 (l * c[0], l * c[1], l * c[2], c[3]);\n"
-    "    gl_FragColor = colour; \n"
-    "}\n";
-    
-    ScopedPointer<OpenGLShaderProgram> newShader (new OpenGLShaderProgram (openGLContext));
-    String statusText;
-    
-    if (newShader->addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (vertexShader))
-        && newShader->addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (fragmentShader))
-        && newShader->link())
-    {
-        shader = newShader;
-        shader->use();
-        
-        uniforms   = new Uniforms (openGLContext, *shader);
-        
-        if (openGLContext.extensions.glGetAttribLocation (shader->getProgramID(), "position") < 0)
-            position      = nullptr;
-        else
-            position      = new OpenGLShaderProgram::Attribute (*shader,    "position");
-        
-        if (openGLContext.extensions.glGetAttribLocation (shader->getProgramID(), "sourceColour") < 0)
-            sourceColour      = nullptr;
-        else
-            sourceColour  = new OpenGLShaderProgram::Attribute (*shader,    "sourceColour");
-        if (openGLContext.extensions.glGetAttribLocation (shader->getProgramID(), "normal") < 0)
-            normal      = nullptr;
-        else
-            normal      = new OpenGLShaderProgram::Attribute (*shader,    "normal");
-        if (openGLContext.extensions.glGetAttribLocation (shader->getProgramID(), "textureCoordIn") < 0)
-            textureCoordIn      = nullptr;
-        else
-            textureCoordIn      = new OpenGLShaderProgram::Attribute (*shader,    "textureCoordIn");
-        
-        statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
-    }
-    else
-    {
-        statusText = newShader->getLastError();
-    }
-}
-
-/** @brief OpenGL initialization function called only once
- */
-void ScatterPlot::initialise()
-{
-    createShaders();
-}
-
-/** @brief Shutdown OpenGL
- */
-void ScatterPlot::shutdown()
-{
-    shader = nullptr;
-}
-
-
-/** @brief Needed code for render function
- *
- */
-void ScatterPlot::auxRender1() {
-    // Stuff to be done before defining your triangles
-    jassert (OpenGLHelpers::isContextActive());
-    const float desktopScale = (float) openGLContext.getRenderingScale();
-    OpenGLHelpers::clear (Colour::greyLevel (0.05f));
-    glEnable (GL_DEPTH_TEST);
-    glDepthFunc (GL_LESS);
-    // Cull triangles which normal is not towards the camera
-    //glEnable(GL_CULL_FACE);
-    glEnable (GL_BLEND);
-    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glViewport (0, 0, roundToInt (desktopScale * getWidth()), roundToInt (desktopScale * getHeight()));
-    shader->use();
-    if (uniforms->projectionMatrix != nullptr)
-        uniforms->projectionMatrix->setMatrix4 (getProjectionMatrix().mat, 1, false);
-    
-    if (uniforms->viewMatrix != nullptr)
-        uniforms->viewMatrix->setMatrix4(glm::value_ptr(_camera->getWorldToViewMatrix()), 1, false);
-    
-    if (uniforms->lightPosition != nullptr)
-        uniforms->lightPosition->set (-15.0f, 10.0f, 15.0f, 0.0f);
-    openGLContext.extensions.glGenBuffers (1, &vertexBuffer);
-    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, vertexBuffer);
-}
-
-
-/** @brief Needed code for render function
- *
- */
-void ScatterPlot::auxRender2() {
-    // ************************************************
-    
-    // Now prepare this information to be drawn
-    openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                           static_cast<GLsizeiptr> (static_cast<size_t> (vertices.size()) * sizeof (Vertex)),
-                                           vertices.getRawDataPointer(), GL_DYNAMIC_DRAW);
-    
-    openGLContext.extensions.glGenBuffers (1, &indexBuffer);
-    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    openGLContext.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER,
-                                           static_cast<GLsizeiptr> (static_cast<size_t> (indices.size()) * sizeof (juce::uint32)),
-                                           indices.getRawDataPointer(), GL_DYNAMIC_DRAW);
-    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, vertexBuffer);
-    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    
-    if (position != nullptr)
-    {
-        openGLContext.extensions.glVertexAttribPointer (position->attributeID, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), 0);
-        openGLContext.extensions.glEnableVertexAttribArray (position->attributeID);
-    }
-    
-    if (normal != nullptr)
-    {
-        openGLContext.extensions.glVertexAttribPointer (normal->attributeID, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 3));
-        openGLContext.extensions.glEnableVertexAttribArray (normal->attributeID);
-    }
-    
-    if (sourceColour != nullptr)
-    {
-        openGLContext.extensions.glVertexAttribPointer (sourceColour->attributeID, 4, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 6));
-        openGLContext.extensions.glEnableVertexAttribArray (sourceColour->attributeID);
-    }
-    
-    if (textureCoordIn != nullptr)
-    {
-        openGLContext.extensions.glVertexAttribPointer (textureCoordIn->attributeID, 2, GL_FLOAT, GL_FALSE, sizeof (Vertex), (GLvoid*) (sizeof (float) * 10));
-        openGLContext.extensions.glEnableVertexAttribArray (textureCoordIn->attributeID);
-    }
-}
-
-
-/** @brief Needed code for render function
- *
- */
-void ScatterPlot::auxRender3() {
-    if (position != nullptr)       openGLContext.extensions.glDisableVertexAttribArray (position->attributeID);
-    if (normal != nullptr)         openGLContext.extensions.glDisableVertexAttribArray (normal->attributeID);
-    if (sourceColour != nullptr)   openGLContext.extensions.glDisableVertexAttribArray (sourceColour->attributeID);
-    if (textureCoordIn != nullptr)  openGLContext.extensions.glDisableVertexAttribArray (textureCoordIn->attributeID);
-    
-    // Reset the element buffers so child Components draw correctly
-    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, 0);
-    openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
-    
-    openGLContext.extensions.glDeleteBuffers (1, &vertexBuffer);
-    openGLContext.extensions.glDeleteBuffers (1, &indexBuffer);
-    repaint();
-}
-
-
-
-
-/*
- 
- 
- int main( void )
- {
- 
- 
-	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
-	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
- 
- 
- 
-	// Generate positions & rotations for 100 monkeys
-	std::vector<glm::vec3> positions(100);
-	std::vector<glm::quat> orientations(100);
-	for(int i=0; i<100; i++){
- positions[i] = glm::vec3(rand()%20-10, rand()%20-10, rand()%20-10);
- orientations[i] = glm::quat(glm::vec3(rand()%360, rand()%360, rand()%360));
-	}
- 
- 
- 
-	// Get a handle for our "LightPosition" uniform
-	glUseProgram(programID);
-	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
- 
-	// For speed computation
-	double lastTime = glfwGetTime();
-	int nbFrames = 0;
- 
- 
- // Compute the MVP matrix from keyboard and mouse input
- computeMatricesFromInputs();
- glm::mat4 ProjectionMatrix = getProjectionMatrix();
- glm::mat4 ViewMatrix = getViewMatrix();
- 
- 
- 
- // PICKING IS DONE HERE
- // (Instead of picking each frame if the mouse button is down,
- // you should probably only check if the mouse button was just released)
- if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)){
- 
- glm::vec3 ray_origin;
- glm::vec3 ray_direction;
- ScreenPosToWorldRay(
- 1024/2, 768/2,
- 1024, 768,
- ViewMatrix,
- ProjectionMatrix,
- ray_origin,
- ray_direction
- );
- 
- //ray_direction = ray_direction*20.0f;
- 
- message = "background";
- 
- // Test each each Oriented Bounding Box (OBB).
- // A physics engine can be much smarter than this,
- // because it already has some spatial partitionning structure,
- // like Binary Space Partitionning Tree (BSP-Tree),
- // Bounding Volume Hierarchy (BVH) or other.
- for(int i=0; i<100; i++){
- 
- float intersection_distance; // Output of TestRayOBBIntersection()
- glm::vec3 aabb_min(-1.0f, -1.0f, -1.0f);
- glm::vec3 aabb_max( 1.0f,  1.0f,  1.0f);
- 
- // The ModelMatrix transforms :
- // - the mesh to its desired position and orientation
- // - but also the AABB (defined with aabb_min and aabb_max) into an OBB
- glm::mat4 RotationMatrix = glm::toMat4(orientations[i]);
- glm::mat4 TranslationMatrix = translate(mat4(), positions[i]);
- glm::mat4 ModelMatrix = TranslationMatrix * RotationMatrix;
- 
- 
- if ( TestRayOBBIntersection(
- ray_origin,
- ray_direction,
- aabb_min,
- aabb_max,
- ModelMatrix,
- intersection_distance)
- ){
- std::ostringstream oss;
- oss << "mesh " << i;
- message = oss.str();
- break;
- }
- }
- 
- 
- }
- 
- 
- // Dark blue background
- glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
- // Re-clear the screen for real rendering
- glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
- 
- // Use our shader
- glUseProgram(programID);
- 
- glEnableVertexAttribArray(0);
- glEnableVertexAttribArray(1);
- glEnableVertexAttribArray(2);
- 
- for(int i=0; i<100; i++){
- 
- 
- glm::mat4 RotationMatrix = glm::toMat4(orientations[i]);
- glm::mat4 TranslationMatrix = translate(mat4(), positions[i]);
- glm::mat4 ModelMatrix = TranslationMatrix * RotationMatrix;
- 
- glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
- 
- // Send our transformation to the currently bound shader,
- // in the "MVP" uniform
- glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
- glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
- glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
- 
- glm::vec3 lightPos = glm::vec3(4,4,4);
- glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
- 
- // Bind our texture in Texture Unit 0
- glActiveTexture(GL_TEXTURE0);
- glBindTexture(GL_TEXTURE_2D, Texture);
- // Set our "myTextureSampler" sampler to use Texture Unit 0
- glUniform1i(TextureID, 0);
- 
- // 1rst attribute buffer : vertices
- glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
- glVertexAttribPointer(
- 0,                  // attribute
- 3,                  // size
- GL_FLOAT,           // type
- GL_FALSE,           // normalized?
- 0,                  // stride
- (void*)0            // array buffer offset
- );
- 
- // 2nd attribute buffer : UVs
- glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
- glVertexAttribPointer(
- 1,                                // attribute
- 2,                                // size
- GL_FLOAT,                         // type
- GL_FALSE,                         // normalized?
- 0,                                // stride
- (void*)0                          // array buffer offset
- );
- 
- // 3rd attribute buffer : normals
- glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
- glVertexAttribPointer(
- 2,                                // attribute
- 3,                                // size
- GL_FLOAT,                         // type
- GL_FALSE,                         // normalized?
- 0,                                // stride
- (void*)0                          // array buffer offset
- );
- 
- // Index buffer
- glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
- 
- // Draw the triangles !
- glDrawElements(
- GL_TRIANGLES,      // mode
- indices.size(),    // count
- GL_UNSIGNED_SHORT,   // type
- (void*)0           // element array buffer offset
- );
- 
- 
- }
- 
- glDisableVertexAttribArray(0);
- glDisableVertexAttribArray(1);
- glDisableVertexAttribArray(2);
- 
- // Draw GUI
- TwDraw();
- 
- // Swap buffers
- glfwSwapBuffers(window);
- glfwPollEvents();
- 
-	} // Check if the ESC key was pressed or the window was closed
-	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
- glfwWindowShouldClose(window) == 0 );
- 
-	// Cleanup VBO and shader
-	glDeleteBuffers(1, &vertexbuffer);
-	glDeleteBuffers(1, &uvbuffer);
-	glDeleteBuffers(1, &normalbuffer);
-	glDeleteBuffers(1, &elementbuffer);
-	glDeleteProgram(programID);
-	glDeleteTextures(1, &Texture);
-	glDeleteVertexArrays(1, &VertexArrayID);
- 
-	// Close OpenGL window and terminate GLFW
-	glfwTerminate();
- 
-	return 0;
- }
- 
- */
