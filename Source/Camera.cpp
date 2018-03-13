@@ -11,16 +11,17 @@ const float MOVEMENT_SPEED = 0.5f;
 
 void Camera::setMousePressPos(const glm::vec2& input)
 {
-    
     _cameraPressPos = position;
     _mousePressPos = input;
     _viewDirectionPressPoss = _viewDirection;
+    _pivotPointPressPos = _pivotPoint;
 }
 
 Camera::Camera() :
 _viewDirection(0.0f, 0.0f, -1.0f),
 position(0.0f, 0.0f, 5.2f),
-_up(0.0f, 1.0f, 0.0f)
+_up(0.0f, 1.0f, 0.0f),
+_pivotPoint(0.0f, 0.0f, 0.0f)
 {
 }
 
@@ -46,9 +47,8 @@ void Camera::rotate(const glm::vec2& pos, int width, int height)
     
     _strafeDirection = glm::cross(_viewDirection, _up);
     glm::mat4 rotator = glm::rotate(dx* 0.05f, _up) * glm::rotate(-dy * 0.05f, _strafeDirection);
-    glm::vec3 cameraFocusVector = -position;
     _viewDirection = glm::mat3(rotator) * _viewDirectionPressPoss;
-    
+    position = glm::length(_cameraPressPos)*-glm::normalize(_viewDirection);
 }
 
 void Camera::pan(const glm::vec2& pos, int width, int height)
@@ -64,6 +64,7 @@ void Camera::pan(const glm::vec2& pos, int width, int height)
     dx = (float)(sX - xPoint) * 4;
     dy = (float)(sY - yPoint) * 4;
     position = _cameraPressPos + (dx)* glm::normalize(glm::cross(_viewDirection, _up)) + (dy)*_up;
+    _pivotPoint = _pivotPointPressPos + (dx)* glm::normalize(glm::cross(_viewDirection, _up)) + (dy)*_up;
 }
 
 void Camera::zoom(const glm::vec2& pos, int width, int height)

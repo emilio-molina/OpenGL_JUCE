@@ -20,6 +20,8 @@ class Camera{
     glm::vec2 _mousePressPos;
     glm::vec3 _cameraPressPos;
     glm::vec3 _viewDirectionPressPoss;
+    glm::vec3 _pivotPoint;
+    glm::vec3 _pivotPointPressPos;
     
 public:
     Camera();

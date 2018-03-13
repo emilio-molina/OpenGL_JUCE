@@ -55,6 +55,13 @@ mat4 inverse(mat4 m) {
                a31 * b01 - a30 * b03 - a32 * b00,
                a20 * b03 - a21 * b01 + a22 * b00) / det;
 }
+float fogFactorLinear(
+                      const float dist,
+                      const float start,
+                      const float end
+                      ) {
+    return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
+}
 
 void main()
 {
@@ -64,5 +71,4 @@ void main()
     textureCoordOut = textureCoordIn;
     color = position;
     gl_Position =  projectionMatrix * viewMatrix * (vertex + position);
-
 }

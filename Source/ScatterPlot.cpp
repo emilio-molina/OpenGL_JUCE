@@ -244,6 +244,7 @@ void ScatterPlot::createHoverShader()
  */
 void ScatterPlot::initialise()
 {
+    
     createLambertShader();
     createHoverShader();
     
@@ -400,7 +401,7 @@ void ScatterPlot::mouseDown (const MouseEvent& e)
 {
     _camera->setMousePressPos(glm::vec2(e.getPosition().x, e.getPosition().y));
     
-    draggableOrientation.mouseDown (e.getPosition());
+    //draggableOrientation.mouseDown (e.getPosition());
     
 }
 
@@ -412,11 +413,17 @@ void ScatterPlot::mouseDrag (const MouseEvent& e)
     if (e.mods.isMiddleButtonDown()){
         _camera->pan(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
     }
-    
     if (e.mods.isRightButtonDown()){
         _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
     }
-    draggableOrientation.mouseDrag (e.getPosition());
+    //draggableOrientation.mouseDrag (e.getPosition());
+}
+
+void ScatterPlot::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& d)
+{
+    // _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+    //zoomValue += d.deltaY;
+    //zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
 }
 
 
@@ -634,8 +641,4 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
     }
 }
 
-void ScatterPlot::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& d)
-{
-    zoomValue += d.deltaY;
-    zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
-}
+
