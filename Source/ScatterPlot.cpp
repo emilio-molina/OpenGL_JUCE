@@ -14,6 +14,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+
 using namespace glm;
 
 
@@ -152,8 +153,8 @@ void ScatterPlot::createLambertShader()
     
     String statusText;
     
-    lambertShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/fragmentShader.glsl") , GL_FRAGMENT_SHADER);
-    lambertShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/vertexShader.glsl") , GL_VERTEX_SHADER);
+    lambertShader->addShader( BinaryData::fragmentShader_glsl , GL_FRAGMENT_SHADER);
+    lambertShader->addShader( BinaryData::vertexShader_glsl , GL_VERTEX_SHADER);
     lambertShader->link();
     
     if (lambertShader->link())
@@ -200,8 +201,8 @@ void ScatterPlot::createHoverShader()
     
     String statusText;
     
-    hoverShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/hoverShader.glsl") , GL_FRAGMENT_SHADER);
-    hoverShader->addShader( readShaderCode( "/Users/vitali/Downloads/OpenGL_JUCE-upwork_fix/Builds/MacOSX/shaders/vertexShader.glsl") , GL_VERTEX_SHADER);
+    hoverShader->addShader( BinaryData::hoverShader_glsl , GL_FRAGMENT_SHADER);
+    hoverShader->addShader( BinaryData::vertexShader_glsl , GL_VERTEX_SHADER);
     hoverShader->link();
     
     if (hoverShader->link())

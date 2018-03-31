@@ -4,8 +4,20 @@
               bundleIdentifier="com.yourcompany.OpenGL_JUCE" includeBinaryInAppConfig="1"
               jucerVersion="5.2.0" headerPath="/usr/local/Cellar/glm/0.9.8.5/include">
   <MAINGROUP id="edyWSh" name="OpenGL_JUCE">
+    <GROUP id="{2886F7D3-A115-91D6-B097-EACFFAAD02A0}" name="shaders">
+      <FILE id="E7Tqm6" name="fragmentShader.glsl" compile="0" resource="1"
+            file="Source/shaders/fragmentShader.glsl"/>
+      <FILE id="tZk1Cs" name="hoverShader.glsl" compile="0" resource="1"
+            file="Source/shaders/hoverShader.glsl"/>
+      <FILE id="AL0NAf" name="vertexShader.glsl" compile="0" resource="1"
+            file="Source/shaders/vertexShader.glsl"/>
+    </GROUP>
     <GROUP id="{FCD36461-A39A-F62B-EA0E-C978BAD1A266}" name="Source">
       <FILE id="eYXZsC" name="ScatterPlot.cpp" compile="1" resource="0" file="Source/ScatterPlot.cpp"/>
+      <FILE id="gyEBMN" name="Bloom.cpp" compile="1" resource="0" file="Source/Bloom.cpp"/>
+      <FILE id="VhumTq" name="Bloom.hpp" compile="0" resource="0" file="Source/Bloom.hpp"/>
+      <FILE id="FrW0Fh" name="Camera.cpp" compile="1" resource="0" file="Source/Camera.cpp"/>
+      <FILE id="zvWZY1" name="Camera.hpp" compile="0" resource="0" file="Source/Camera.hpp"/>
       <FILE id="NexENO" name="ScatterPlot.h" compile="0" resource="0" file="Source/ScatterPlot.h"/>
       <FILE id="ROZ82U" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
