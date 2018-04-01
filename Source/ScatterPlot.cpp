@@ -110,10 +110,32 @@ ScatterPlot::ScatterPlot()
     vertex = nullptr;
     textureCoordIn = nullptr;
     sourceColour = nullptr;
+    Random r;
+    std::vector<SphereInfo> spheres;
+    for (int i=0; i<20000; i++) {
+        spheres.push_back(SphereInfo{i,
+                                     (r.nextFloat() - 0.5f) * 2,
+                                     (r.nextFloat() - 0.5f) * 2,
+                                     (r.nextFloat() - 0.5f) * 2,
+                                     0.1f,
+                                     r.nextFloat(),
+                                     r.nextFloat(),
+                                     r.nextFloat()});
+    }
+    addSpheres(spheres);
+}
+
+
+void ScatterPlot::callbackHover(int sphereId) {
+    Logger::writeToLog("intersect: " + String(sphereId));
+}
+
+
+void ScatterPlot::addSpheres(std::vector<SphereInfo> spheres) {
     SolidSphereGenerator sphereGenerator(10, 10);
     
     int sphere_id = 0;
-
+    
     Random r;
     
     // Generate a template sphere in position 0.0f and size 1.0f
@@ -130,22 +152,15 @@ ScatterPlot::ScatterPlot()
                                    sphereId,
                                    indices);
     
-    for (int j=0; j<20000; j++) {
-                float ix = (r.nextFloat() - 0.5f) * 20;
-                float iy = (r.nextFloat() - 0.5f) * 20;
-                float iz = (r.nextFloat() - 0.5f) * 20;
-                float x = ix * 0.1f;
-                float y = iy * 0.1f;
-                float z = iz * 0.1f;
-                glm::vec3 v(x, y, z);
-                spherePositions.push_back(v);
+    for (auto &s: spheres) {
+        float x = s.x;
+        float y = s.y;
+        float z = s.z;
+        glm::vec3 v(x, y, z);
+        spherePositions.push_back(v);
     }
-    
-
-
-    
-    
 }
+
 
 Matrix3D<float> ScatterPlot::getProjectionMatrix() const
 {
@@ -155,6 +170,7 @@ Matrix3D<float> ScatterPlot::getProjectionMatrix() const
     return Matrix3D<float>::fromFrustum (-w, w, -h, h, 1.0f, 30.0f);
 }
 
+
 Matrix3D<float> ScatterPlot::getViewMatrix() const
 {
     auto viewMatrix = //Matrix3D<float>(Vector3D<float> (0.0f, 0.0f, zoomValue)) *
@@ -162,8 +178,6 @@ Matrix3D<float> ScatterPlot::getViewMatrix() const
     * Vector3D<float> (0.0f, 0.0f, -10.0f);
     return viewMatrix;
 }
-
-
 
 
 void ScatterPlot::render()
@@ -187,33 +201,6 @@ void ScatterPlot::resized()
     draggableOrientation.setViewport (getLocalBounds());
     
 }
-
-
-//=== OpenGL auxiliar functions
-
-/** @brief Create OpenGL shaders
- *
- * Vertex shader: Graphic-card routine determining how vertices modify their
- *                coordinates, as a function of camera position, etc.
- *
- * Fragment shader: Graphic-card routine determining how pixels are colored
- *                  depending on their position, colors, texture, light, etc.
- */
-
-
-std::string readShaderCode(const char* fileName)
-{
-    std::ifstream meInput(fileName);
-    if (!meInput.good())
-    {
-        std::cout << "File failed to read " << fileName << std::endl;
-        exit(1);
-    }
-    return std::string(
-                       std::istreambuf_iterator<char>(meInput),
-                       std::istreambuf_iterator<char>());
-}
-
 
 
 void ScatterPlot::createLambertShader()
@@ -264,6 +251,7 @@ void ScatterPlot::createLambertShader()
         statusText = lambertShader->getLastError();
     }
 }
+
 
 void ScatterPlot::createHoverShader()
 {
@@ -693,9 +681,9 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
 {
     float x = ((float)e.getPosition().getX() / getWidth() - 0.5f) * 2;
     float y = ((float)e.getPosition().getY() / getHeight() - 0.5f) * -2;
-    Logger::writeToLog(String(x) + ", " + String(y));
+    //Logger::writeToLog(String(x) + ", " + String(y));
     vec4 screenCoords(x, y, 1.0f, 1.0f);
-    Logger::writeToLog(String(screenCoords.x) + ", " + String(screenCoords.y) + ", " + String(screenCoords.z));
+    //Logger::writeToLog(String(screenCoords.x) + ", " + String(screenCoords.y) + ", " + String(screenCoords.z));
     glm::vec3 out_origin, out_direction;
     ScreenPosToWorldRay(x, y,
                         make_mat4(getViewMatrix().mat),
@@ -730,7 +718,7 @@ void ScatterPlot::mouseMove (const MouseEvent& e)
             }
             hoveredSpherePositions.push_back(spherePositions[i]);
             spherePositions.erase(spherePositions.begin() + i);
-            //Logger::writeToLog("intersect: " + String(i));
+            callbackHover(i);
             break;
         }
     }

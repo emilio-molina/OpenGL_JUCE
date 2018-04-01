@@ -69,6 +69,19 @@ public:
 };
 
 
+struct SphereInfo
+{
+    int sphereId;
+    float x;
+    float y;
+    float z;
+    float radius;
+    float r;
+    float g;
+    float b;
+};
+
+
 /* Class taken from:
  * https://github.com/WeAreROLI/JUCE/blob/master/examples/GUI/OpenGLAppDemo.h#L283
  */
@@ -129,6 +142,8 @@ public:
     void createLambertShader();
     void createHoverShader();
     
+    void callbackHover(int sphereId);  // TODO
+    void addSpheres(std::vector<SphereInfo> spheres);  // TODO
 private:
 
     ScopedPointer<OpenGLShaderProgram> lambertShader;
