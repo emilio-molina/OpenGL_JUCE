@@ -20,6 +20,20 @@
 #include "Camera.hpp"
 #include "Bloom.hpp"
 
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
+
+#ifndef M_PI_2
+    #define M_PI_2 1.57079632679489661923
+#endif
+
+
+/* Vertex struct for OpenGL buffers
+ *
+ */
 struct Vertex
 {
     float position[3];  // position of the vertex
@@ -28,67 +42,36 @@ struct Vertex
     float texCoord[2];  // coordinate of texture
 };
 
+
+/* Class to generate vertices of a sphere.
+ * taken from:
+ * https://stackoverflow.com/questions/5988686/creating-a-3d-sphere-in-opengl-using-visual-c/5989676#5989676
+ */
 class SolidSphereGenerator
 {
 public:
     std::vector<Vertex> templateVertices;
     std::vector<int> templateIndices;
     
+    /* Create a single-sphere template with specific number of rings and sectors
+     *
+     */
     SolidSphereGenerator(unsigned int rings,
-                         unsigned int sectors)
-    {
-        printf("%f %f/n", M_PI, M_PI_2);
-        float const R = 1./(float)(rings-1);
-        float const S = 1./(float)(sectors-1);
-        for(int r = 0; r < rings; r++) {
-            for(int s = 0; s < sectors; s++) {
-                float y = sin( -M_PI_2 + M_PI * r * R );
-                float x = cos(2*M_PI * s * S) * sin( M_PI * r * R );
-                float z = sin(2*M_PI * s * S) * sin( M_PI * r * R );
-                templateVertices.push_back(
-                                           {
-                                               { x, y, z},
-                                               { x, y, z},
-                                               { 1.0f, 1.0f, 1.0f, 1.0f},
-                                               { s * S, r * R}
-                                           }
-                                           );
-            }
-        }
-        for(int r = 0; r < rings; r++) {
-            for(int s = 0; s < sectors; s++) {
-                templateIndices.push_back(r * sectors + s);
-                templateIndices.push_back(r * sectors + (s+1));
-                templateIndices.push_back((r+1) * sectors + (s+1));
-                templateIndices.push_back((r+1) * sectors + s);
-            }
-        }
-    }
+                         unsigned int sectors);
     
-        void generateSphere(int sphereId, float offsetX, float offsetY, float offsetZ,
-                        float colourR, float colourG, float colourB, float alpha,
-                        float radius, Array<Vertex> &vertices, Array<int> &sphereIds,
-                        Array<int> &indices) {
-        int startIndex = (int)vertices.size();
-        for (auto v: templateVertices) {
-            vertices.add(
-                         {
-                             { v.position[0] * radius + offsetX,
-                                 v.position[1] * radius + offsetY,
-                                 v.position[2] * radius + offsetZ},
-                             { v.normal[0], v.normal[1], v.normal[2]},
-                             {colourR, colourG, colourB, alpha},
-                             {v.texCoord[0], v.texCoord[1]}
-                         }
-                         );
-            sphereIds.add(sphereId);
-        }
-        for (auto i: templateIndices) {
-            indices.add(i + startIndex);
-        }
-    }
+    /* Append to vertices, sphereIds, and indices all needed information to
+     * create a new sphere.
+     */
+    void generateSphere(int sphereId, float offsetX, float offsetY, float offsetZ,
+                    float colourR, float colourG, float colourB, float alpha,
+                    float radius, Array<Vertex> &vertices, Array<int> &sphereIds,
+                    Array<int> &indices);
 };
 
+
+/* Class taken from:
+ * https://github.com/WeAreROLI/JUCE/blob/master/examples/GUI/OpenGLAppDemo.h#L283
+ */
 struct Uniforms
 {
     Uniforms (OpenGLContext& openGLContext, OpenGLShaderProgram& shaderProgram)
@@ -115,7 +98,9 @@ private:
 };
 
 
-
+/* Component for scatterplot of some thousands of spheres
+ *
+ */
 class ScatterPlot    : public OpenGLAppComponent
 {
 public:
@@ -130,19 +115,19 @@ public:
     void initialise() override;
     void shutdown() override;
     void render() override;
+    void auxRender1();
+    void auxRender2();
+    void auxRender3();
     void paint (Graphics&) override;
     void resized() override;
-    Matrix3D<float> getProjectionMatrix() const;
-    Matrix3D<float> getViewMatrix() const;
     void mouseDown (const MouseEvent& e) override;
     void mouseMove (const MouseEvent& e) override;
     void mouseDrag (const MouseEvent& e) override;
     void mouseWheelMove (const MouseEvent&, const MouseWheelDetails& d) override;
+    Matrix3D<float> getProjectionMatrix() const;
+    Matrix3D<float> getViewMatrix() const;
     void createLambertShader();
     void createHoverShader();
-    void auxRender1();
-    void auxRender2();
-    void auxRender3();
     
 private:
 
@@ -159,10 +144,7 @@ private:
     Array<int> indices;
     Array<int> sphereId;
     GLuint vertexBuffer, indexBuffer, positionBuffer;
-    const char* vertexShader;
-    const char* fragmentShader;
     float zoomValue;
-    //ScopedPointer<OpenGLShaderProgram> shader;
     ScopedPointer<OpenGLShaderProgram::Attribute> position, normal, sourceColour, textureCoordIn, vertex;
     ScopedPointer<Uniforms> lambertUniforms;
     ScopedPointer<Uniforms> hoverUniforms;
