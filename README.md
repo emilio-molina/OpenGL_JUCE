@@ -1,4 +1,5 @@
 # OpenGL_JUCE
 Simple project using OpenGL in JUCE (just for practicing).
 
-It is a simplified version of OpenGL demo in JUCE examples which draws a single 2D triangle moving along the screen.
+In order to generate XCode, Visual Studio or Makefile projects, open OpenGL_JUCE.jucer with Projucer. It should work with v5.3.0.
+https://shop.juce.com/get-juce/download 

@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="v8MxM5" name="OpenGL_JUCE" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.yourcompany.OpenGL_JUCE" includeBinaryInAppConfig="1"
-              jucerVersion="5.2.0" headerPath="/usr/local/Cellar/glm/0.9.8.5/include">
+              jucerVersion="5.3.0" headerPath="/usr/local/Cellar/glm/0.9.8.5/include">
   <MAINGROUP id="edyWSh" name="OpenGL_JUCE">
     <GROUP id="{2886F7D3-A115-91D6-B097-EACFFAAD02A0}" name="shaders">
       <FILE id="E7Tqm6" name="fragmentShader.glsl" compile="0" resource="1"
