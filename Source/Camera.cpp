@@ -19,7 +19,7 @@ void Camera::setMousePressPos(const glm::vec2& input)
 
 Camera::Camera() :
 _viewDirection(0.0f, 0.0f, -1.0f),
-position(0.0f, 0.0f, 5.2f),
+position(0.0f, 0.0f, 10.0f),
 _up(0.0f, 1.0f, 0.0f),
 _pivotPoint(0.0f, 0.0f, 0.0f)
 {
