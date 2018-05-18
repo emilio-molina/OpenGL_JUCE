@@ -25,6 +25,8 @@ in vec3 viewDir;
 in vec3 lightDir;
 uniform vec3 eyePosition;
 
+layout(location = 0) out vec4 colorOut;
+
 vec3 CookTorrance()
 {
   float k = 0.2;
@@ -143,5 +145,5 @@ vec4 glowWithFogExperiment(){
 
 void main()
 {
-  gl_FragColor = glowWithFogExperiment();
+  colorOut = glowWithFogExperiment();
 }

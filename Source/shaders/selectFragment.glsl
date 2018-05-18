@@ -1,6 +1,10 @@
-varying vec4 color_out;
+#version 330
+
+in vec4 color_out;
+
+layout(location = 0) out vec4 colorOut;
 
 void main()
 {
-    gl_FragColor =  color_out;
+    colorOut =  color_out;
 }

@@ -3,7 +3,7 @@
 <JUCERPROJECT id="v8MxM5" name="OpenGL_JUCE" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.yourcompany.OpenGL_JUCE" includeBinaryInAppConfig="1"
               jucerVersion="5.3.2" headerPath="/usr/local/Cellar/glm/0.9.8.5/include"
-              displaySplashScreen="1">
+              displaySplashScreen="1" defines="JUCE_OPENGL3=1">
   <MAINGROUP id="edyWSh" name="OpenGL_JUCE">
     <GROUP id="{2886F7D3-A115-91D6-B097-EACFFAAD02A0}" name="shaders">
       <FILE id="xxcgpY" name="blurPassFrag.glsl" compile="0" resource="1"

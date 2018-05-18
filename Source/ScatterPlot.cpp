@@ -49,10 +49,14 @@ SolidSphereGenerator::SolidSphereGenerator(unsigned int rings,
 	}
 	for (int r = 0; r < rings; r++) {
 		for (int s = 0; s < sectors; s++) {
-			templateIndices.push_back(r * sectors + s);
-			templateIndices.push_back(r * sectors + (s + 1));
-			templateIndices.push_back((r + 1) * sectors + (s + 1));
-			templateIndices.push_back((r + 1) * sectors + s);
+			templateIndices.push_back(r * sectors + s); // 1
+			templateIndices.push_back(r * sectors + (s + 1)); // 2
+			templateIndices.push_back((r + 1) * sectors + (s + 1)); // 3
+
+
+			templateIndices.push_back((r + 1) * sectors + (s + 1)); // 3
+			templateIndices.push_back((r + 1) * sectors + s); // 4
+			templateIndices.push_back(r * sectors + s); // 1
 		}
 	}
 }
@@ -99,7 +103,7 @@ void SolidSphereGenerator::generateSphere(int sphereId, float offsetX,
  */
 ScatterPlot::ScatterPlot() {
 	// apparently openGL 3.2 is the highest supported by JUCE
-	//openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
+	openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
 
 
 	_camera = new Camera();
@@ -198,6 +202,7 @@ void ScatterPlot::resized() {
 /** @brief OpenGL initialization function called only once
  */
 void ScatterPlot::initialise() {
+
 	auto local = getLocalBounds();
 
 	selectShader = new SelectShader(openGLContext);
@@ -256,7 +261,6 @@ void ScatterPlot::initialise() {
 
 
 	//ppManager->create(mainShader->mainFrameBuffer, nullptr, true);
-
 
 
 
@@ -345,7 +349,7 @@ void ScatterPlot::selectRender() {
 
 		selectShader->modelMatrix->setMatrix4(glm::value_ptr(scaled), 1, false);
 		selectShader->color->set(color.x, color.y, color.z, 1.0f);
-		glDrawElements(GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	}
 
 	selectShader->end();
@@ -372,8 +376,8 @@ void ScatterPlot::mainRender() {
 			_camera->position.y,
 			_camera->position.z,
 			1.0f);
-		std::cout << "cam pos:" << _camera->position.x << "," << _camera->position.y << "," <<
-							_camera->position.z << std::endl;
+		/*std::cout << "cam pos:" << _camera->position.x << "," << _camera->position.y << "," <<
+							_camera->position.z << std::endl;*/
 	}
 
 
@@ -461,7 +465,7 @@ void ScatterPlot::mainRender() {
 		/*if (mainShader->color != nullptr)
 			mainShader->color->set(1.0f, 1.0f, 1.0f, 1.0f);*/
 
-		glDrawElements(GL_QUADS, indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	}
 
 	mainShader->output->unbind();
@@ -492,6 +496,8 @@ void ScatterPlot::auxRender3() {
 	// Reset the element buffers so child Components draw correctly
 	openGLContext.extensions.glBindBuffer(GL_ARRAY_BUFFER, 0);
 	openGLContext.extensions.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	//openGLContext.swapBuffers();
 
 	//openGLContext.extensions.glDeleteBuffers (1, &vertexBuffer);
 	//openGLContext.extensions.glDeleteBuffers (1, &indexBuffer);

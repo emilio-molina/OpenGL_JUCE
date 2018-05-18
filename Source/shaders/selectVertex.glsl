@@ -1,4 +1,6 @@
-attribute vec4 vertex;
+#version 330
+
+in vec4 vertex;
 
 
 uniform mat4 projectionMatrix;
@@ -6,7 +8,7 @@ uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform vec4 color;
 
-varying vec4 color_out;
+out vec4 color_out;
 
 void main()
 {
