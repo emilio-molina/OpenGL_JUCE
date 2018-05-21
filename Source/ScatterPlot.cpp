@@ -536,7 +536,7 @@ void ScatterPlot::mouseDrag(const MouseEvent &e) {
 		_camera->pan(dx, dy);
 	}
 	if (e.mods.isRightButtonDown()) {
-		_camera->zoom(dy);
+		_camera->zoomByDragging(dy);
 	}
 }
 
@@ -546,6 +546,7 @@ void ScatterPlot::mouseWheelMove(const MouseEvent &e, const MouseWheelDetails &d
 	// _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	//zoomValue += d.deltaY;
 	//zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
+    _camera->zoomByWheel(d.deltaY);
 }
 
 void ScatterPlot::mouseMove(const MouseEvent &e) {

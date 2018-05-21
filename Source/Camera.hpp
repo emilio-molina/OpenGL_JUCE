@@ -30,7 +30,8 @@ public:
     glm::mat4 getWorldToViewMatrix() const;
     void rotate(float deltaX, float deltaY);
     void pan(float deltaX, float deltaY);
-    void zoom(float deltaZoom);
+    void zoomByDragging(float deltaZoom);
+    void zoomByWheel(float deltaZoom);
     void startDragging();
 };
 

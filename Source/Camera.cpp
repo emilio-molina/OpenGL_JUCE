@@ -36,9 +36,14 @@ void Camera::pan(float dx, float dy)
     _pivotPoint = _pivotPointPressPos + (dx)* glm::normalize(glm::cross(_viewDirection, _up)) + (dy)*_up;
 }
 
-void Camera::zoom(float dy)
+void Camera::zoomByDragging(float dy)
 {
     position = _cameraPressPos + dy *_viewDirection;
+}
+
+void Camera::zoomByWheel(float dy)
+{
+    position += dy *_viewDirection;
 }
 
 
