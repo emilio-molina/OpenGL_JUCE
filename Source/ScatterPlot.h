@@ -268,6 +268,8 @@ public:
 
 	void mouseWheelMove(const MouseEvent &, const MouseWheelDetails &d) override;
 
+    void modifierKeysChanged (const ModifierKeys &modifiers) override;
+    
 	Matrix3D<float> getProjectionMatrix() const;
 
 	Matrix3D<float> getViewMatrix() const;
@@ -281,17 +283,19 @@ public:
 	void createHoverShader();
 
 	void callbackHover(int sphereId);  // TODO
+    
+    glm::vec2 computeDraggingDeltaPosition(const MouseEvent &e);
 private:
 
 
 	ScopedPointer<SelectShader> selectShader;
 	ScopedPointer<MainShader> mainShader;
 	ScopedPointer<PostProcessing> pp;
+    bool shiftPressed;
 
 	Random r;
-	Draggable3DOrientation draggableOrientation;
-	float draggingX;
-	float draggingY;
+    float _draggingStartX;
+    float _draggingStartY;
 	bool initialized;
 	// OpenGL variables:
 	Array<Vertex> vertices;

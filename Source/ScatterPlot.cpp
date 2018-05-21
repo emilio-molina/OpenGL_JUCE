@@ -107,10 +107,11 @@ ScatterPlot::ScatterPlot() {
 
 
 	_camera = new Camera();
+    shiftPressed = false;
 	setSize(800, 600);
 	zoomValue = 5.0f;
-	draggingX = 0.0f;
-	draggingY = 0.0f;
+	_draggingStartX = 0.0f;
+	_draggingStartY = 0.0f;
 	Random r;
 
 	for (int i = 0; i < 200; i++) {
@@ -196,13 +197,12 @@ void ScatterPlot::paint(Graphics &g) {
 }
 
 void ScatterPlot::resized() {
-	draggableOrientation.setViewport(getLocalBounds());
 }
 
 /** @brief OpenGL initialization function called only once
  */
 void ScatterPlot::initialise() {
-
+    setWantsKeyboardFocus(true);
 	auto local = getLocalBounds();
 
 	selectShader = new SelectShader(openGLContext);
@@ -506,26 +506,43 @@ void ScatterPlot::auxRender3() {
 
 
 void ScatterPlot::mouseDown(const MouseEvent &e) {
-	_camera->setMousePressPos(glm::vec2(e.getPosition().x, e.getPosition().y));
+    _draggingStartX = e.getPosition().x;
+    _draggingStartY = e.getPosition().y;
+    _camera->startDragging();
+}
 
-	//draggableOrientation.mouseDown (e.getPosition());
-
+glm::vec2 ScatterPlot::computeDraggingDeltaPosition(const MouseEvent &e) {
+    float sX = (2.0f * _draggingStartX) / (float)getWidth() - 1.0f;
+    float sY = 1.0f - (2.0f * _draggingStartY) / (float)getHeight();
+    
+    float xPoint = (2.0f * e.getPosition().x) / (float)getWidth() - 1.0f;
+    float yPoint = 1.0f - (2.0f * e.getPosition().y) / (float)getHeight();
+    
+    float dx, dy;
+    dx = (float)(sX - xPoint) * 10.f;
+    dy = (float)(sY - yPoint) * 20.f;
+    return glm::vec2(dx, dy);
 }
 
 void ScatterPlot::mouseDrag(const MouseEvent &e) {
-	if (e.mods.isLeftButtonDown()) {
-		_camera->rotate(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+
+    glm::vec2 deltaPosition = computeDraggingDeltaPosition(e);
+    float dx = deltaPosition.x;
+    float dy = deltaPosition.y;
+	if (e.mods.isLeftButtonDown() && !shiftPressed) {
+		_camera->rotate(dx, dy);
 	}
-	if (e.mods.isMiddleButtonDown()) {
-		_camera->pan(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+	if (e.mods.isLeftButtonDown() && shiftPressed) {
+		_camera->pan(dx, dy);
 	}
 	if (e.mods.isRightButtonDown()) {
-		_camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+		_camera->zoom(dy);
 	}
-	//draggableOrientation.mouseDrag (e.getPosition());
 }
 
 void ScatterPlot::mouseWheelMove(const MouseEvent &e, const MouseWheelDetails &d) {
+    //std::cout << d.deltaY << std::endl;
+    //_camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	// _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	//zoomValue += d.deltaY;
 	//zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
@@ -558,4 +575,8 @@ void ScatterPlot::mouseMove(const MouseEvent &e) {
 	int index = selectShader->getIndexByColor(color);
 
 	callbackHover(index);
+}
+
+void ScatterPlot::modifierKeysChanged (const ModifierKeys &modifiers) {
+    shiftPressed = modifiers.isShiftDown();
 }
