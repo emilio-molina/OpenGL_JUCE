@@ -12,13 +12,13 @@ namespace BinaryData
     const int            blurPassFrag_glslSize = 1723;
 
     extern const char*   brightPassFrag_glsl;
-    const int            brightPassFrag_glslSize = 848;
+    const int            brightPassFrag_glslSize = 854;
 
     extern const char*   finalPassFrag_glsl;
     const int            finalPassFrag_glslSize = 345;
 
     extern const char*   fragmentShader_glsl;
-    const int            fragmentShader_glslSize = 3549;
+    const int            fragmentShader_glslSize = 3571;
 
     extern const char*   screenFrag_glsl;
     const int            screenFrag_glslSize = 261;

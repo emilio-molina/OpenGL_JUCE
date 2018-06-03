@@ -117,9 +117,9 @@ vec4 normalMap(){
 
 
 vec4 bright(){
-  float intensity = max(0.0, dot(viewDir, fragNormal)) * 2.0;
+  float intensity = max(0.0, dot(viewDir, fragNormal));
 
-  return vec4(color.rgb * intensity, 1.0);
+  return vec4(color.rgb * intensity * 1.2, 1.0);
 }
 
 
@@ -145,5 +145,5 @@ vec4 glowWithFogExperiment(){
 
 void main()
 {
-  colorOut = glowWithFogExperiment();
+  colorOut = vec4(mix(color.rgb, bright().rgb, 0.5) , 1.0);
 }

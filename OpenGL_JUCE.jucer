@@ -3,7 +3,7 @@
 <JUCERPROJECT id="v8MxM5" name="OpenGL_JUCE" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.yourcompany.OpenGL_JUCE" includeBinaryInAppConfig="1"
               jucerVersion="5.3.2" headerPath="/usr/local/Cellar/glm/0.9.8.5/include"
-              displaySplashScreen="1" defines="JUCE_OPENGL3=1">
+              displaySplashScreen="1" defines="JUCE_OPENGL3=1 GLM_ENABLE_EXPERIMENTAL=1">
   <MAINGROUP id="edyWSh" name="OpenGL_JUCE">
     <GROUP id="{2886F7D3-A115-91D6-B097-EACFFAAD02A0}" name="shaders">
       <FILE id="xxcgpY" name="blurPassFrag.glsl" compile="0" resource="1"
@@ -24,6 +24,8 @@
             file="Source/shaders/vertexShader.glsl"/>
     </GROUP>
     <GROUP id="{FCD36461-A39A-F62B-EA0E-C978BAD1A266}" name="Source">
+      <FILE id="dCsBCR" name="PixelBuffer.cpp" compile="1" resource="0" file="Source/PixelBuffer.cpp"/>
+      <FILE id="sgcKxx" name="PixelBuffer.h" compile="0" resource="0" file="Source/PixelBuffer.h"/>
       <FILE id="UQVDQg" name="PostProcessing.cpp" compile="1" resource="0"
             file="Source/PostProcessing.cpp"/>
       <FILE id="dsNvlw" name="PostProcessing.h" compile="0" resource="0"
@@ -140,6 +142,7 @@
   </MODULES>
   <JUCEOPTIONS/>
   <LIVE_SETTINGS>
+    <LINUX/>
     <OSX/>
   </LIVE_SETTINGS>
 </JUCERPROJECT>

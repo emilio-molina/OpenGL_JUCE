@@ -21,6 +21,7 @@
 		FA1281B83930E068BF50935D = {isa = PBXBuildFile; fileRef = A61A7C47CD6B1EA6843534DA; };
 		781508945FAB83D8CA9AD202 = {isa = PBXBuildFile; fileRef = 5320750730F96CC7A547250A; };
 		2A924387BD33AE7290264DEF = {isa = PBXBuildFile; fileRef = 43B8A5075D02E1797ACDBC4E; };
+		A66B5A7EE3CF466359034A01 = {isa = PBXBuildFile; fileRef = 7A07C40036E4D580CA69A668; };
 		79781A86F0A910D1267F1178 = {isa = PBXBuildFile; fileRef = E57BC9F267AFEE881C27D22F; };
 		04143ABD131729BF37607219 = {isa = PBXBuildFile; fileRef = C9CC3CB5FF06CE707FC534B2; };
 		3176EAC5BA7E7B8EFC956248 = {isa = PBXBuildFile; fileRef = 0B9E08CDF0E4F358A595BBDA; };
@@ -44,6 +45,7 @@
 		00A610FE0CCDB8068BDA69A2 = {isa = PBXFileReference; lastKnownFileType = file; name = "juce_events"; path = "~/JUCE/modules/juce_events"; sourceTree = "<absolute>"; };
 		021404E7FFED364CD4F44CA9 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Camera.hpp; path = ../../Source/Camera.hpp; sourceTree = "SOURCE_ROOT"; };
 		05A1B42DFCF104477DDFE735 = {isa = PBXFileReference; lastKnownFileType = file.glsl; name = blurPassFrag.glsl; path = ../../Source/shaders/blurPassFrag.glsl; sourceTree = "SOURCE_ROOT"; };
+		098DF28410ADDF00C20B657E = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PixelBuffer.h; path = ../../Source/PixelBuffer.h; sourceTree = "SOURCE_ROOT"; };
 		0AE8A504B7E514123496232A = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = "SOURCE_ROOT"; };
 		0B9E08CDF0E4F358A595BBDA = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ShaderBase.cpp; path = ../../Source/ShaderBase.cpp; sourceTree = "SOURCE_ROOT"; };
 		0FF581C48D731811BC6DAB8F = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -69,6 +71,7 @@
 		56AF11863C83BABCEED29130 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = "include_juce_core.mm"; path = "../../JuceLibraryCode/include_juce_core.mm"; sourceTree = "SOURCE_ROOT"; };
 		5940EED3DA3F1E1839DC8398 = {isa = PBXFileReference; lastKnownFileType = file.glsl; name = brightPassFrag.glsl; path = ../../Source/shaders/brightPassFrag.glsl; sourceTree = "SOURCE_ROOT"; };
 		74A00B04957051A651C7CA99 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = "include_juce_data_structures.mm"; path = "../../JuceLibraryCode/include_juce_data_structures.mm"; sourceTree = "SOURCE_ROOT"; };
+		7A07C40036E4D580CA69A668 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PixelBuffer.cpp; path = ../../Source/PixelBuffer.cpp; sourceTree = "SOURCE_ROOT"; };
 		7BB3F9E84DC2D537E6B6EA76 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = "include_juce_graphics.mm"; path = "../../JuceLibraryCode/include_juce_graphics.mm"; sourceTree = "SOURCE_ROOT"; };
 		85209E563FFB3CDD488B6105 = {isa = PBXFileReference; lastKnownFileType = file; name = "juce_data_structures"; path = "~/JUCE/modules/juce_data_structures"; sourceTree = "<absolute>"; };
 		855A1BCA97F849B8FBA74A0E = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FrameBuffer.h; path = ../../Source/FrameBuffer.h; sourceTree = "SOURCE_ROOT"; };
@@ -118,6 +121,8 @@
 					4B773CDE1CADFFCF870A12DC,
 					292898EB4E93433FE7FD1F0E, ); name = shaders; sourceTree = "<group>"; };
 		A36A1BF3B0EC9D8CCCC5D10C = {isa = PBXGroup; children = (
+					7A07C40036E4D580CA69A668,
+					098DF28410ADDF00C20B657E,
 					E57BC9F267AFEE881C27D22F,
 					F6B200D489EBDA369E042663,
 					C9CC3CB5FF06CE707FC534B2,
@@ -203,6 +208,7 @@
 					"_DEBUG=1",
 					"DEBUG=1",
 					"JUCE_OPENGL3=1",
+					"GLM_ENABLE_EXPERIMENTAL=1",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
 					"JUCE_APP_VERSION=1.0.0",
 					"JUCE_APP_VERSION_HEX=0x10000",
@@ -236,6 +242,7 @@
 					"_NDEBUG=1",
 					"NDEBUG=1",
 					"JUCE_OPENGL3=1",
+					"GLM_ENABLE_EXPERIMENTAL=1",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
 					"JUCE_APP_VERSION=1.0.0",
 					"JUCE_APP_VERSION_HEX=0x10000",
@@ -342,6 +349,7 @@
 		0EC8F61C29254666CCE6626E = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
 					2A924387BD33AE7290264DEF, ); runOnlyForDeploymentPostprocessing = 0; };
 		262169DC39A55F665EA5F64B = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (
+					A66B5A7EE3CF466359034A01,
 					79781A86F0A910D1267F1178,
 					04143ABD131729BF37607219,
 					3176EAC5BA7E7B8EFC956248,

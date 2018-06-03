@@ -107,14 +107,13 @@ ScatterPlot::ScatterPlot() {
 
 
 	_camera = new Camera();
-    shiftPressed = false;
 	setSize(800, 600);
 	zoomValue = 5.0f;
-	_draggingStartX = 0.0f;
-	_draggingStartY = 0.0f;
+	draggingX = 0.0f;
+	draggingY = 0.0f;
 	Random r;
 
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < 500; i++) {
 		spheres.push_back(SphereInfo{i,
 																 (r.nextFloat() - 0.5f) * 20, // X
 																 (r.nextFloat() - 0.5f) * 20, // Y
@@ -122,9 +121,9 @@ ScatterPlot::ScatterPlot() {
 
 																 0.2f + r.nextFloat() * 0.4f, // radius
 
-																 0.4f + r.nextFloat() * 0.8f, // red
-																 0.4f + r.nextFloat() * 0.8f, // green
-																 0.4f + r.nextFloat() * 0.8f, // blue
+																 0.1f + r.nextFloat() * 0.6f, // red
+																 0.1f + r.nextFloat() * 0.6f, // green
+																 0.1f + r.nextFloat() * 0.6f, // blue
 
 																 false, false});
 	}
@@ -197,24 +196,18 @@ void ScatterPlot::paint(Graphics &g) {
 }
 
 void ScatterPlot::resized() {
+	draggableOrientation.setViewport(getLocalBounds());
 }
 
 /** @brief OpenGL initialization function called only once
  */
 void ScatterPlot::initialise() {
-    setWantsKeyboardFocus(true);
-	auto local = getLocalBounds();
 
-	selectShader = new SelectShader(openGLContext);
+	auto local = getLocalBounds();
+    local *= 2;
+	selectShader = new SelectShader(openGLContext, local.getWidth(), local.getHeight());
 
 	std::cout << "w:" << local.getWidth() << " h:" << local.getHeight() << std::endl;
-
-
-	selectShader->selectFrameBuffer = std::unique_ptr<FrameBuffer>(
-		new FrameBuffer(openGLContext, local.getWidth(), local.getHeight(), true, false));
-
-
-
 	//selectShader->selectFrameBuffer initialise(openGLContext, local.getWidth(), local.getHeight());
 
 
@@ -233,26 +226,26 @@ void ScatterPlot::initialise() {
 	auto hBlur = pp->create({bright->output},
 													BinaryData::blurPassFrag_glsl);
 	hBlur->screenShader->addUniform<float>("resolution", local.getWidth());
-	hBlur->screenShader->addUniform<float>("radius", 4.0f);
+	hBlur->screenShader->addUniform<float>("radius", 6.0f);
 	hBlur->screenShader->addUniform<glm::vec3>("dir", glm::vec3(1.0f, 0.0f, 0.0f));
 
 	auto vBlur = pp->create({hBlur->output},
 													BinaryData::blurPassFrag_glsl);
 	vBlur->screenShader->addUniform<float>("resolution", local.getHeight());
-	vBlur->screenShader->addUniform<float>("radius", 4.0f);
+	vBlur->screenShader->addUniform<float>("radius", 6.0f);
 	vBlur->screenShader->addUniform<glm::vec3>("dir", glm::vec3(0.0f, 1.0f, 0.0f));
 
 
 	auto hBlur2 = pp->create({vBlur->output},
 													 BinaryData::blurPassFrag_glsl);
 	hBlur2->screenShader->addUniform<float>("resolution", local.getWidth());
-	hBlur2->screenShader->addUniform<float>("radius", 8.0f);
+	hBlur2->screenShader->addUniform<float>("radius", 12.0f);
 	hBlur2->screenShader->addUniform<glm::vec3>("dir", glm::vec3(1.0f, 0.0f, 0.0f));
 
 	auto vBlur2 = pp->create({hBlur2->output},
 													 BinaryData::blurPassFrag_glsl);
 	vBlur2->screenShader->addUniform<float>("resolution", local.getHeight());
-	vBlur2->screenShader->addUniform<float>("radius", 8.0f);
+	vBlur2->screenShader->addUniform<float>("radius", 12.0f);
 	vBlur2->screenShader->addUniform<glm::vec3>("dir", glm::vec3(0.0f, 1.0f, 0.0f));
 
 
@@ -359,7 +352,7 @@ void ScatterPlot::mainRender() {
 	mainShader->shader->use();
 
 	mainShader->output->bind();
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
 
 	OpenGLHelpers::clear(Colour::greyLevel(0.05f));
 	//OpenGLHelpers::clear(Colour());
@@ -506,47 +499,29 @@ void ScatterPlot::auxRender3() {
 
 
 void ScatterPlot::mouseDown(const MouseEvent &e) {
-    _draggingStartX = e.getPosition().x;
-    _draggingStartY = e.getPosition().y;
-    _camera->startDragging();
-}
+	_camera->setMousePressPos(glm::vec2(e.getPosition().x, e.getPosition().y));
 
-glm::vec2 ScatterPlot::computeDraggingDeltaPosition(const MouseEvent &e) {
-    float sX = (2.0f * _draggingStartX) / (float)getWidth() - 1.0f;
-    float sY = 1.0f - (2.0f * _draggingStartY) / (float)getHeight();
-    
-    float xPoint = (2.0f * e.getPosition().x) / (float)getWidth() - 1.0f;
-    float yPoint = 1.0f - (2.0f * e.getPosition().y) / (float)getHeight();
-    
-    float dx, dy;
-    dx = (float)(sX - xPoint) * 10.f;
-    dy = (float)(sY - yPoint) * 20.f;
-    return glm::vec2(dx, dy);
+	//draggableOrientation.mouseDown (e.getPosition());
+
 }
 
 void ScatterPlot::mouseDrag(const MouseEvent &e) {
-
-    glm::vec2 deltaPosition = computeDraggingDeltaPosition(e);
-    float dx = deltaPosition.x;
-    float dy = deltaPosition.y;
-	if (e.mods.isLeftButtonDown() && !shiftPressed) {
-		_camera->rotate(dx, dy);
+	if (e.mods.isLeftButtonDown()) {
+		_camera->rotate(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	}
-	if (e.mods.isLeftButtonDown() && shiftPressed) {
-		_camera->pan(dx, dy);
+	if (e.mods.isMiddleButtonDown()) {
+		_camera->pan(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	}
 	if (e.mods.isRightButtonDown()) {
-		_camera->zoomByDragging(dy);
+		_camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	}
+	//draggableOrientation.mouseDrag (e.getPosition());
 }
 
 void ScatterPlot::mouseWheelMove(const MouseEvent &e, const MouseWheelDetails &d) {
-    //std::cout << d.deltaY << std::endl;
-    //_camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
-	// _camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
+	_camera->zoom(glm::vec2(e.getPosition().x, e.getPosition().y), getHeight(), getWidth());
 	//zoomValue += d.deltaY;
 	//zoomValue = jmin(jmax(zoomValue, 0.1f), 30.0f);
-    _camera->zoomByWheel(d.deltaY);
 }
 
 void ScatterPlot::mouseMove(const MouseEvent &e) {
@@ -556,13 +531,15 @@ void ScatterPlot::mouseMove(const MouseEvent &e) {
 	auto local = getLocalBounds();
 	auto x = e.getPosition().getX();
 	auto y = local.getHeight() - e.getPosition().getY();
-
+    x *= 2;
+    y *= 2;
 
 	if (selectShader == nullptr) {
 		return;
 	}
 
 	int pixelIndex = (y * selectShader->selectFrameBuffer->getWidth()) + x;
+
 
 	if (pixelIndex > selectShader->pixels.size()) {
 		return;
@@ -572,12 +549,8 @@ void ScatterPlot::mouseMove(const MouseEvent &e) {
 	PixelARGB &readPixel = selectShader->pixels[pixelIndex];
 
 	uint32_t color = readPixel.getRed() | readPixel.getGreen() << 8 | readPixel.getBlue() << 16;
-	//std::cout << std::hex << color << std::endl;
+
 	int index = selectShader->getIndexByColor(color);
 
 	callbackHover(index);
-}
-
-void ScatterPlot::modifierKeysChanged (const ModifierKeys &modifiers) {
-    shiftPressed = modifiers.isShiftDown();
 }

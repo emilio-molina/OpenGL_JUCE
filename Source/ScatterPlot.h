@@ -19,6 +19,7 @@
 #include "ShaderBase.h"
 #include "FrameBuffer.h"
 #include "PostProcessing.h"
+#include "PixelBuffer.h"
 
 
 #ifndef M_PI
@@ -167,16 +168,47 @@ public:
 		selectFrameBuffer->makeCurrentAndClear();
 	}
 
+	void captureOld() {
+		auto start = Time::getMillisecondCounter();
+		selectFrameBuffer->readPixels(pixels.data(), Rectangle<int>(0, 0, selectFrameBuffer->getWidth(),
+																																selectFrameBuffer->getHeight()));
+		auto took = Time::getMillisecondCounter() - start;
+		//std::cout << "Old technique took:" << took << "ms" << std::endl;
+	}
+
+	void captureNew() {
+		auto start2 = Time::getMillisecondCounter();
+
+
+		apbo->read();
+		auto bytes = apbo->map();
+		if (bytes != nullptr) {
+			memcpy(pixels.data(), bytes, apbo->getDataSize());
+			apbo->unmap();
+			auto took2 = Time::getMillisecondCounter() - start2;
+			//std::cout << "New technique took:" << took2 << "ms" << std::endl;
+		} else {
+			std::cout << "Got null ptr" << std::endl;
+		}
+	}
+
 	void end() {
 		int pixelCount = selectFrameBuffer->getWidth() * selectFrameBuffer->getHeight();
 		pixels.resize(pixelCount);
-		selectFrameBuffer->readPixels(pixels.data(), Rectangle<int>(0, 0, selectFrameBuffer->getWidth(),
-																																selectFrameBuffer->getHeight()));
+
+		captureNew();
 
 		selectFrameBuffer->unbind();
 	}
 
-	SelectShader(OpenGLContext &openGLContext) : ShaderBase(openGLContext) {
+
+	SelectShader(OpenGLContext &openGLContext, int width, int height) : ShaderBase(openGLContext) {
+
+		apbo = std::shared_ptr<AlternatingPixelBuffer>
+			(new AlternatingPixelBuffer(openGLContext, width, height));
+
+		selectFrameBuffer = std::shared_ptr<FrameBuffer>
+			(new FrameBuffer(openGLContext, width, height, true, false));
 
 
 		createShader(BinaryData::selectFragment_glsl, BinaryData::selectVertex_glsl);
@@ -188,6 +220,8 @@ public:
 
 		vertex = createAttribute("vertex");
 	}
+
+	std::shared_ptr<AlternatingPixelBuffer> apbo;
 
 	ScopedPointer<OpenGLShaderProgram::Uniform> projectionMatrix, viewMatrix, modelMatrix, color;
 	ScopedPointer<OpenGLShaderProgram::Attribute> vertex;
@@ -268,8 +302,6 @@ public:
 
 	void mouseWheelMove(const MouseEvent &, const MouseWheelDetails &d) override;
 
-    void modifierKeysChanged (const ModifierKeys &modifiers) override;
-    
 	Matrix3D<float> getProjectionMatrix() const;
 
 	Matrix3D<float> getViewMatrix() const;
@@ -283,19 +315,17 @@ public:
 	void createHoverShader();
 
 	void callbackHover(int sphereId);  // TODO
-    
-    glm::vec2 computeDraggingDeltaPosition(const MouseEvent &e);
 private:
 
 
 	ScopedPointer<SelectShader> selectShader;
 	ScopedPointer<MainShader> mainShader;
 	ScopedPointer<PostProcessing> pp;
-    bool shiftPressed;
 
 	Random r;
-    float _draggingStartX;
-    float _draggingStartY;
+	Draggable3DOrientation draggableOrientation;
+	float draggingX;
+	float draggingY;
 	bool initialized;
 	// OpenGL variables:
 	Array<Vertex> vertices;

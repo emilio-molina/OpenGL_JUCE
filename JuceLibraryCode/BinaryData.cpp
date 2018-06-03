@@ -71,7 +71,7 @@ static const unsigned char temp_binary_data_1[] =
 "\r\n"
 "uniform sampler2D texture0;\r\n"
 "\r\n"
-"float brightPassThreshold = 0.3f; // lower threshold\r\n"
+"float brightPassThreshold = 0.2f; // lower threshold\r\n"
 "\r\n"
 "layout(location = 0) out vec4 colorOut;\r\n"
 "\r\n"
@@ -79,14 +79,14 @@ static const unsigned char temp_binary_data_1[] =
 "{\r\n"
 "\r\n"
 "    vec3 luminanceVector = vec3(0.2125, 0.7154, 0.0721);\r\n"
-"    vec4 c = texture(texture0, fragTextureCoord) * fragColor;\r\n"
+"    vec4 c = texture(texture0, fragTextureCoord) * fragColor * 1.4;\r\n"
 "\r\n"
 "    float luminance = dot(luminanceVector, c.xyz);\r\n"
 "    luminance = max(0.0, luminance - brightPassThreshold);\r\n"
 "    c.xyz *= sign(luminance);\r\n"
 "    c.a = 1.0;\r\n"
 "\r\n"
-"    colorOut = c * 1.2f;\r\n"
+"    colorOut = c * 1.4f;\r\n"
 "\r\n"
 "    /*vec4 color = texture(texture,fragTextureCoord);\r\n"
 "    float brightness = (color.r * 0.2126) + (color.g * 0.7152) + (color.b * 0.0722);\r\n"
@@ -244,9 +244,9 @@ static const unsigned char temp_binary_data_3[] =
 "\r\n"
 "\r\n"
 "vec4 bright(){\r\n"
-"  float intensity = max(0.0, dot(viewDir, fragNormal)) * 2.0;\r\n"
+"  float intensity = max(0.0, dot(viewDir, fragNormal));\r\n"
 "\r\n"
-"  return vec4(color.rgb * intensity, 1.0);\r\n"
+"  return vec4(color.rgb * intensity * 1.2, 1.0);\r\n"
 "}\r\n"
 "\r\n"
 "\r\n"
@@ -272,7 +272,7 @@ static const unsigned char temp_binary_data_3[] =
 "\r\n"
 "void main()\r\n"
 "{\r\n"
-"  colorOut = glowWithFogExperiment();\r\n"
+"  colorOut = vec4(mix(color.rgb, bright().rgb, 0.5) , 1.0);\r\n"
 "}\r\n";
 
 const char* fragmentShader_glsl = (const char*) temp_binary_data_3;
@@ -409,9 +409,9 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
     switch (hash)
     {
         case 0x50feddf3:  numBytes = 1723; return blurPassFrag_glsl;
-        case 0x9591e640:  numBytes = 848; return brightPassFrag_glsl;
+        case 0x9591e640:  numBytes = 854; return brightPassFrag_glsl;
         case 0x4a90bd44:  numBytes = 345; return finalPassFrag_glsl;
-        case 0x114811a8:  numBytes = 3549; return fragmentShader_glsl;
+        case 0x114811a8:  numBytes = 3571; return fragmentShader_glsl;
         case 0x38f5191f:  numBytes = 261; return screenFrag_glsl;
         case 0xd045b140:  numBytes = 327; return screenVert_glsl;
         case 0x0c1032f1:  numBytes = 128; return selectFragment_glsl;
